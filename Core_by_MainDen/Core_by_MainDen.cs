@@ -6,6 +6,7 @@
 // Read more on https://github.com/MainDen/SDK-by-MainDen
 
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Reflection;
 
@@ -35,7 +36,33 @@ namespace MainDen
         /// </summary>
         /// <param name="Changes">Associates subobjects with their clones.</param>
         /// <returns>Clone of the object.</returns>
-        object CycledClone(ref IDictionary<object, object> Changes);
+        object CycledClone(ref IDictionary Changes);
+    }
+    public static class Cloner
+    {
+        public static object Clone(object source, ref IDictionary contract)
+        {
+            if (contract == null)
+                throw new ArgumentNullException("contract");
+            else if (source == null)
+                throw new ArgumentNullException("source");
+            else if (contract.Contains(source))
+                return contract[source];
+            else if (source is ICyclicalCloneable cyclicalCloneable)
+                cyclicalCloneable.CycledClone(ref contract);
+            else if (source is ICloneable cloneable)
+                contract.Add(source, cloneable.Clone());
+            else if (source is Array array)
+            {
+                object[] objects = new object[array.GetLength(0)];
+                contract.Add(source, objects);
+                for (int i = 0; i < array.GetLength(0); ++i)
+                    objects[i] = Clone(array.GetValue(i), ref contract);
+            }
+            else
+                contract.Add(source, source.GetType().GetMethod("MemberwiseClone", BindingFlags.Instance | BindingFlags.NonPublic).Invoke(source, null));
+            return contract[source];
+        }
     }
     /// <summary>
     /// Expands the capabilities of collections.
@@ -82,6 +109,7 @@ namespace MainDen
             /// <param name="property">Property of the object.</param>
             /// <returns>True if the property is missing or does not exist for the object.</returns>
             bool Empty(string property);
+            object this[string property] { get; set; }
         }
         /// <summary>
         /// Provides the object with knowledge about the groups in which it is contained.
@@ -183,9 +211,7 @@ namespace MainDen
             /// <returns>False if not null.</returns>
             public bool Empty(string property)
             {
-                if (Has(property))
-                    return Properties[property] == null;
-                return true;
+                return !Properties.ContainsKey(property);
             }
             /// <summary>
             /// Checks if the object belongs to the group.
@@ -201,7 +227,7 @@ namespace MainDen
             /// </summary>
             public void Dispose()
             {
-                foreach (Group group in Groups)
+                foreach (IGroup group in Groups)
                     group.Exclude(this);
             }
             /// <summary>
@@ -219,38 +245,20 @@ namespace MainDen
             /// <returns>Clone of object.</returns>
             public object Clone()
             {
-                IDictionary<object, object> Changes = new Dictionary<object, object>();
-                return CycledClone(ref Changes);
+                IDictionary contract = new Dictionary<object, object>();
+                return CycledClone(ref contract);
             }
             /// <summary>
             /// Provides cloning with duplicate objects.
             /// </summary>
-            /// <param name="Changes">Associates subobjects with their clones.</param>
+            /// <param name="contract">Associates subobjects with their clones.</param>
             /// <returns>Clone of the object.</returns>
-            public object CycledClone(ref IDictionary<object, object> Changes)
+            public object CycledClone(ref IDictionary contract)
             {
-                if (Changes == null)
-                    Changes = new Dictionary<object, object>();
-                Obj clone = new Obj();
-                Changes.Add(this, clone);
+                IObj clone = new Obj();
+                contract.Add(this, clone);
                 foreach (string property in Properties.Keys)
-                {
-                    object current = this[property];
-                    if (!Changes.ContainsKey(current))
-                        if (current is ICyclicalCloneable cyclicalCloneable)
-                            cyclicalCloneable.CycledClone(ref Changes);
-                        else if (current is ICloneable cloneable)
-                            Changes.Add(current, cloneable.Clone());
-                        else try
-                            {
-                                Changes.Add(current, current.GetType().GetMethod("MemberwiseClone", BindingFlags.Instance | BindingFlags.NonPublic).Invoke(current, null));
-                            }
-                            catch
-                            {
-                                Changes.Add(current, null);
-                            }
-                    clone.Set(property, Changes[current]);
-                }
+                    clone.Set(property, Cloner.Clone(this[property], ref contract));
                 return clone;
             }
             /// <summary>
@@ -263,7 +271,7 @@ namespace MainDen
                 {
                     int hash = 3371;
                     foreach (string property in Properties.Keys)
-                        hash = (hash * 3) + Properties[property].GetHashCode();
+                        hash = (hash * 3) + Properties[property].ToString().GetHashCode();
                     return hash;
                 }
             }
@@ -297,7 +305,7 @@ namespace MainDen
             /// <returns>The string representation of the object.</returns>
             public override string ToString()
             {
-                throw new NotImplementedException();
+                return base.ToString();
             }
             /// <summary>
             /// Checks all properties by name.
@@ -365,52 +373,17 @@ namespace MainDen
             }
             public new object Clone()
             {
-                IDictionary<object, object> Changes = new Dictionary<object, object>();
-                return CycledClone(ref Changes);
+                IDictionary contract = new Dictionary<object, object>();
+                return CycledClone(ref contract);
             }
-            public new object CycledClone(ref IDictionary<object, object> Changes)
+            public new object CycledClone(ref IDictionary contract)
             {
-                if (Changes == null)
-                    Changes = new Dictionary<object, object>();
                 Group clone = new Group();
-                Changes.Add(this, clone);
+                contract.Add(this, clone);
                 foreach (string property in Properties.Keys)
-                {
-                    object current = this[property];
-                    if (!Changes.ContainsKey(current))
-                        if (current is ICyclicalCloneable cyclicalCloneable)
-                            cyclicalCloneable.CycledClone(ref Changes);
-                        else if (current is ICloneable cloneable)
-                            Changes.Add(current, cloneable.Clone());
-                        else
-                            try
-                            {
-                                Changes.Add(current, current.GetType().GetMethod("MemberwiseClone", BindingFlags.Instance | BindingFlags.NonPublic).Invoke(current, null));
-                            }
-                            catch
-                            {
-                                Changes.Add(current, null);
-                            }
-                    clone.Set(property, Changes[current]);
-                }
+                    clone.Set(property, Cloner.Clone(this[property], ref contract));
                 foreach (object entry in Entries)
-                {
-                    if (!Changes.ContainsKey(entry))
-                        if (entry is ICyclicalCloneable cyclicalCloneable)
-                            cyclicalCloneable.CycledClone(ref Changes);
-                        else if (entry is ICloneable cloneable)
-                            Changes.Add(entry, cloneable.Clone());
-                        else
-                            try
-                            {
-                                Changes.Add(entry, entry.GetType().GetMethod("MemberwiseClone", BindingFlags.Instance | BindingFlags.NonPublic).Invoke(entry, null));
-                            }
-                            catch
-                            {
-                                Changes.Add(entry, null);
-                            }
-                    clone.Include(Changes[entry]);
-                }
+                    clone.Include(Cloner.Clone(entry, ref contract));
                 return clone;
             }
             private ISet<object> GetMembers()
@@ -424,7 +397,7 @@ namespace MainDen
             private ISet<IGroup> GetSubgroups()
             {
                 ISet<IGroup> subgroups = new HashSet<IGroup>();
-                foreach (IGroupable entry in Entries)
+                foreach (object entry in Entries)
                     if (entry is IGroup subgroup)
                         subgroups.Add(subgroup);
                 return subgroups;
@@ -433,10 +406,9 @@ namespace MainDen
             {
                 Entries = new HashSet<object>();
             }
-            public Group(IGroup group) : base()
+            public Group(IGroup group) : this()
             {
-                Entries = new HashSet<object>();
-                foreach (IGroupable entry in group.Entries)
+                foreach (object entry in group.Entries)
                     Include(entry);
             }
         }
