@@ -1,4 +1,4 @@
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using MainDen.Collections;
 using System;
 using System.Drawing;
@@ -131,6 +131,27 @@ namespace UnitTest_for_SDK_by_MainDen
             Assert.IsTrue(g1.IncludedIn(g2));
             Assert.IsFalse(g2.IncludedIn(g1));
             Assert.IsFalse(g2.IncludedIn(g2));
+        }
+        [TestMethod]
+        public void Test_Group_Dispose()
+        {
+            Group g1 = new Group();
+            Group g2 = new Group();
+            Group g3 = new Group();
+            Group g4 = new Group();
+            Obj o1 = new Obj();
+            g1.Include(g1);
+            g1.Include(g2);
+            g1.Include(g3);
+            g2.Include(g1);
+            g2.Include(g3);
+            g2.Include(g4);
+            g1.Include(o1);
+            g1.Include("12");
+            g1.Include("12");
+            g1.Include(1);
+            Assert.IsTrue(o1.IncludedIn(g1));
+            Assert.IsTrue(g1.IncludedIn(g1));
         }
     }
 }

@@ -1,7 +1,6 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using MainDen.Collections;
 using System;
-using System.Collections;
 using System.Collections.Generic;
 
 namespace UnitTest_for_SDK_by_MainDen
@@ -10,54 +9,45 @@ namespace UnitTest_for_SDK_by_MainDen
     public class Test_Obj
     {
         [TestMethod]
-        public void Test_Obj_TryGet()
+        public void Test_Obj_TryGetProperty()
         {
             Obj o1 = new Obj();
-            o1.Set("property1", 10);
+            o1.SetProperty("property1", 10);
             object actual;
-            o1.TryGet("property1", out actual);
+            o1.TryGetProperty("property1", out actual);
             Assert.AreEqual(10, actual);
-            o1.TryGet("property2", out actual);
+            o1.TryGetProperty("property2", out actual);
             Assert.IsNull(actual);
-            Assert.ThrowsException<ArgumentNullException>(() => { o1.TryGet(null, out actual); });
+            Assert.ThrowsException<ArgumentNullException>(() => { o1.TryGetProperty(null, out actual); });
         }
         [TestMethod]
-        public void Test_Obj_Set()
+        public void Test_Obj_SetProperty()
         {
             Obj o1 = new Obj();
-            o1.Set("property1", 10);
-            Assert.ThrowsException<ArgumentNullException>(() => { o1.Set("property2", null); });
-            Assert.ThrowsException<ArgumentNullException>(() => { o1.Set(null, 1); });
+            o1.SetProperty("property1", 10);
+            Assert.ThrowsException<ArgumentNullException>(() => { o1.SetProperty("property2", null); });
+            Assert.ThrowsException<ArgumentNullException>(() => { o1.SetProperty(null, 1); });
             Assert.AreEqual(1, o1.Properties.Count);
         }
         [TestMethod]
-        public void Test_Obj_Remove()
+        public void Test_Obj_RemoveProperty()
         {
             Obj o1 = new Obj();
-            o1.Set("property1", "value1");
-            Assert.ThrowsException<ArgumentNullException>(() => { o1.Remove(null); });
+            o1.SetProperty("property1", "value1");
+            Assert.ThrowsException<ArgumentNullException>(() => { o1.RemoveProperty(null); });
             Assert.AreEqual(1, o1.Properties.Count);
-            Assert.IsTrue(o1.Remove("property1"));
+            Assert.IsTrue(o1.RemoveProperty("property1"));
             Assert.AreEqual(0, o1.Properties.Count);
-            Assert.IsFalse(o1.Remove("property1"));
+            Assert.IsFalse(o1.RemoveProperty("property1"));
         }
         [TestMethod]
-        public void Test_Obj_Has()
+        public void Test_Obj_ContainsProperty()
         {
             Obj o1 = new Obj();
-            o1.Set("property1", "value1");
-            Assert.IsTrue(o1.Has("property1"));
-            Assert.IsFalse(o1.Has("property2"));
-            Assert.ThrowsException<ArgumentNullException>(() => { o1.Has(null); });
-        }
-        [TestMethod]
-        public void Test_Obj_Empty()
-        {
-            Obj o1 = new Obj();
-            o1.Set("property1", "value1");
-            Assert.IsFalse(o1.Empty("property1"));
-            Assert.IsTrue(o1.Empty("property2"));
-            Assert.ThrowsException<ArgumentNullException>(() => { o1.Empty(null); });
+            o1.SetProperty("property1", "value1");
+            Assert.IsTrue(o1.ContainsProperty("property1"));
+            Assert.IsFalse(o1.ContainsProperty("property2"));
+            Assert.ThrowsException<ArgumentNullException>(() => { o1.ContainsProperty(null); });
         }
         [TestMethod]
         public void Test_Obj_IncludedIn()
@@ -102,14 +92,14 @@ namespace UnitTest_for_SDK_by_MainDen
             Obj o1 = new Obj();
             Obj o2 = new Obj();
             Obj o3 = new Obj();
-            o1.Set("1", 1);
-            o1.Set("o1", o1);
-            o1.Set("o2", o2);
-            o1.Set("o3", o3);
-            o2.Set("2", 2);
-            o2.Set("o1", o1);
-            o3.Set("3", 3);
-            o3.Set("o3", o3);
+            o1.SetProperty("1", 1);
+            o1.SetProperty("o1", o1);
+            o1.SetProperty("o2", o2);
+            o1.SetProperty("o3", o3);
+            o2.SetProperty("2", 2);
+            o2.SetProperty("o1", o1);
+            o3.SetProperty("3", 3);
+            o3.SetProperty("o3", o3);
             Obj c1 = (Obj)o1.Clone();
             Assert.AreEqual(c1["1"], o1["1"]);
             Assert.AreEqual(c1["o1"], c1);
@@ -127,15 +117,15 @@ namespace UnitTest_for_SDK_by_MainDen
             Obj o2 = new Obj();
             Obj o3 = new Obj();
             Obj c1;
-            o1.Set("1", 1);
-            o1.Set("o1", o1);
-            o1.Set("o2", o2);
-            o1.Set("o3", o3);
-            o2.Set("2", 2);
-            o2.Set("o1", o1);
-            o3.Set("3", 3);
-            o3.Set("o3", o3);
-            IDictionary contract;
+            o1.SetProperty("1", 1);
+            o1.SetProperty("o1", o1);
+            o1.SetProperty("o2", o2);
+            o1.SetProperty("o3", o3);
+            o2.SetProperty("2", 2);
+            o2.SetProperty("o1", o1);
+            o3.SetProperty("3", 3);
+            o3.SetProperty("o3", o3);
+            IDictionary<object, object> contract;
             contract = new Dictionary<object, object>();
             contract.Add(o3, o3);
             c1 = (Obj)o1.CyclicalClone(ref contract);
