@@ -12,7 +12,7 @@ using System.Security;
 
 namespace Windows_API_by_MainDen
 {
-    namespace WinAPI
+    public static partial class WinAPI
     {
         public static partial class Hook
         {
@@ -1706,7 +1706,7 @@ namespace Windows_API_by_MainDen
             }
         }
     }
-    namespace WinAPI
+    public static partial class WinAPI
     {
         public static partial class Hook
         {
