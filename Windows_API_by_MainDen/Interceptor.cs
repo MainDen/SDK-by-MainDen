@@ -11,7 +11,7 @@ using System.Windows.Forms;
 
 namespace Windows_API_by_MainDen
 {
-    namespace Interceptor
+    public static class Interceptor
     {
         public class KeyboardHooker : IDisposable
         {
