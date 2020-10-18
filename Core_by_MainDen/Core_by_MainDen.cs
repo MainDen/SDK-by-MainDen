@@ -405,10 +405,16 @@ namespace MainDen
                 }
                 return xmlThis;
             }
-            public static Obj ToObject(XmlElement source, ref IDictionary<string, Cyclical.CyclicalMethods.TtoO<XmlElement>> ttoo, ref IDictionary<string, CyclicalMethods.TtoOM<XmlElement>> ttoom, ref IDictionary<string, CyclicalMethods.TtoOISM<XmlElement>> ttooism)
+            public static Obj ToObject(XmlElement source, ref IDictionary<string, CyclicalMethods.TtoO<XmlElement>> ttoo, ref IDictionary<string, CyclicalMethods.TtoOM<XmlElement>> ttoom, ref IDictionary<string, CyclicalMethods.TtoOISM<XmlElement>> ttooism)
             {
                 if (source is null)
                     throw new ArgumentNullException(nameof(source));
+                if (ttoo is null)
+                    throw new ArgumentNullException(nameof(ttoo));
+                if (ttoom is null)
+                    throw new ArgumentNullException(nameof(ttoom));
+                if (ttooism is null)
+                    throw new ArgumentNullException(nameof(ttooism));
                 IDictionary<string, object> id_source = new Dictionary<string, object>();
                 if (!ttoom.ContainsKey(typeof(Obj).FullName))
                     ttoom.Add(typeof(Obj).FullName, ToObject);
@@ -422,6 +428,12 @@ namespace MainDen
                     throw new ArgumentNullException(nameof(source));
                 if (id_source is null)
                     throw new ArgumentNullException(nameof(id_source));
+                if (ttoo is null)
+                    throw new ArgumentNullException(nameof(ttoo));
+                if (ttoom is null)
+                    throw new ArgumentNullException(nameof(ttoom));
+                if (ttooism is null)
+                    throw new ArgumentNullException(nameof(ttooism));
                 if (!ttoom.ContainsKey(typeof(Obj).FullName))
                     ttoom.Add(typeof(Obj).FullName, ToObject);
                 if (!ttooism.ContainsKey(typeof(Obj).FullName))
@@ -438,7 +450,10 @@ namespace MainDen
                 XmlElement xmlProperties = (XmlElement)xmlPropertiesList[0];
                 foreach (XmlElement xmlProperty in xmlProperties.GetElementsByTagName("Property"))
                     if (xmlProperty.HasAttribute("key"))
-                        obj.SetProperty(xmlProperty.GetAttribute("key"), CyclicalMethods.ToObject(xmlProperty, ref id_source, ref ttoo, ref ttoom, ref ttooism));
+                        if (obj.ContainsProperty(xmlProperty.GetAttribute("key")))
+                            throw new XmlException($"Property with key=\"{xmlProperty.GetAttribute("key")}\" has already been created.");
+                        else
+                            obj.SetProperty(xmlProperty.GetAttribute("key"), CyclicalMethods.ToObject(xmlProperty, ref id_source, ref ttoo, ref ttoom, ref ttooism));
                     else
                         throw new XmlException("XML node \"Property\" must contain the attribute \"key\".");
                 return obj;
@@ -619,6 +634,12 @@ namespace MainDen
             {
                 if (source is null)
                     throw new ArgumentNullException(nameof(source));
+                if (ttoo is null)
+                    throw new ArgumentNullException(nameof(ttoo));
+                if (ttoom is null)
+                    throw new ArgumentNullException(nameof(ttoom));
+                if (ttooism is null)
+                    throw new ArgumentNullException(nameof(ttooism));
                 IDictionary<string, object> id_source = new Dictionary<string, object>();
                 if (!ttoom.ContainsKey(typeof(Group).FullName))
                     ttoom.Add(typeof(Group).FullName, ToObject);
@@ -632,6 +653,12 @@ namespace MainDen
                     throw new ArgumentNullException(nameof(source));
                 if (id_source is null)
                     throw new ArgumentNullException(nameof(id_source));
+                if (ttoo is null)
+                    throw new ArgumentNullException(nameof(ttoo));
+                if (ttoom is null)
+                    throw new ArgumentNullException(nameof(ttoom));
+                if (ttooism is null)
+                    throw new ArgumentNullException(nameof(ttooism));
                 if (!ttoom.ContainsKey(typeof(Group).FullName))
                     ttoom.Add(typeof(Group).FullName, ToObject);
                 if (!ttooism.ContainsKey(typeof(Group).FullName))
@@ -702,6 +729,121 @@ namespace MainDen
                 bool Contains(T instance);
                 bool Contains(IGroup<T> instance);
             }
+        }
+    }
+    namespace Automation
+    {
+        public class Manager : IDisposable
+        {
+            public delegate void ManagerErrorEventHandler(Manager manager, Worker worker);
+            internal List<Worker> _workers;
+            public List<Worker> Workers
+            {
+                get
+                {
+                    List<Worker> workers = new List<Worker>();
+                    foreach (Worker worker in _workers)
+                        workers.Add(worker);
+                    return workers;
+                }
+            }
+            public void AddWorker(Worker worker)
+            {
+                if (worker is null)
+                    throw new ArgumentNullException(nameof(worker));
+                _workers.Add(worker);
+                worker._managers.Add(this);
+                worker.OnError += Error;
+            }
+            public void DisableAll()
+            {
+                foreach (Worker worker in Workers)
+                    worker.Disable();
+            }
+            public void EnableAll()
+            {
+                foreach (Worker worker in Workers)
+                    worker.Enable();
+            }
+            public void ResetAll()
+            {
+                foreach (Worker worker in Workers)
+                    worker.Reset();
+            }
+            public void WorkAll()
+            {
+                foreach (Worker worker in Workers)
+                    worker.Work();
+            }
+            public void Dispose()
+            {
+                foreach (Worker worker in Workers)
+                {
+                    worker._managers.Remove(this);
+                    worker.OnError -= Error;
+                }
+                _workers.Clear();
+            }
+            public void Error(Worker worker)
+            {
+                OnError?.Invoke(this, worker);
+            }
+            public Manager()
+            {
+                _workers = new List<Worker>();
+            }
+            public Manager(IList<Worker> workers)
+            {
+                foreach (Worker worker in workers)
+                    _workers.Add(worker);
+            }
+            public event ManagerErrorEventHandler OnError;
+        }
+        public abstract class Worker : IDisposable
+        {
+            public delegate void WorkerErrorEventHandler(Worker sender);
+            internal List<Manager> _managers;
+            public List<Manager> Managers
+            {
+                get
+                {
+                    List<Manager> managers = new List<Manager>();
+                    foreach (Manager manager in _managers)
+                        managers.Add(manager);
+                    return managers;
+                }
+            }
+            public bool Enabled { get; protected set; }
+            public virtual void Disable()
+            {
+                Enabled = false;
+            }
+            public virtual void Enable()
+            {
+                Enabled = true;
+            }
+            public abstract void Reset();
+            public abstract void Work();
+            public virtual void Dispose()
+            {
+                foreach (Manager manager in Managers)
+                {
+                    _managers.Remove(manager);
+                    manager._workers.Remove(this);
+                    if (!_managers.Contains(manager))
+                        OnError -= manager.Error;
+                }
+            }
+            public virtual void Error()
+            {
+                OnError?.Invoke(this);
+            }
+            public Worker()
+            {
+                _managers = new List<Manager>();
+                Enabled = false;
+            }
+            public event WorkerErrorEventHandler OnError;
         }
     }
 }
