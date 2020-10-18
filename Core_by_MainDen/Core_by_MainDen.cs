@@ -1,4 +1,4 @@
-﻿// BSD 3-Clause License
+// BSD 3-Clause License
 //
 // Copyright (c) 2020, MainDen
 // All rights reserved.
@@ -35,12 +35,10 @@ namespace MainDen
         }
         public static class CyclicalMethods
         {
-            // TtoO = TypeToObject
-            public delegate object TtoO<T>(T source);
-            // TtoOM = TypeToObjectMethods
-            public delegate object TtoOM<T>(T source, ref IDictionary<string, TtoO<T>> ttoo, ref IDictionary<string, TtoOM<T>> ttoom, ref IDictionary<string, TtoOISM<T>> ttooism);
-            // TtoOISM = TypeToObjectIdSourceMethods
-            public delegate object TtoOISM<T>(T source, ref IDictionary<string, object> id_source, ref IDictionary<string, TtoO<T>> ttoo, ref IDictionary<string, TtoOM<T>> ttoom, ref IDictionary<string, TtoOISM<T>> ttooism);
+            public delegate object TypeToObject<T>(T source);
+            public delegate object TypeToIdObject<T>(T source, ref IDictionary<string, object> id_source);
+            public static Dictionary<string, TypeToObject<XmlElement>> XmlElementConverters = new Dictionary<string, TypeToObject<XmlElement>>();
+            public static Dictionary<string, TypeToIdObject<XmlElement>> XmlElementIdConverters = new Dictionary<string, TypeToIdObject<XmlElement>>();
             public static int GetHashCode(object source, ref IDictionary<object, int> hashCodes)
             {
                 if (source is null)
@@ -129,18 +127,12 @@ namespace MainDen
                     return xml_element;
                 }
             }
-            public static object ToObject(XmlElement source, ref IDictionary<string, object> id_source, ref IDictionary<string, TtoO<XmlElement>> ttoo, ref IDictionary<string, TtoOM<XmlElement>> ttoom, ref IDictionary<string, TtoOISM<XmlElement>> ttooism)
+            public static object ToObject(XmlElement source, ref IDictionary<string, object> id_source)
             {
                 if (source is null)
                     throw new ArgumentNullException(nameof(source));
                 if (id_source is null)
                     throw new ArgumentNullException(nameof(id_source));
-                if (ttoo is null)
-                    throw new ArgumentNullException(nameof(ttoo));
-                if (ttoom is null)
-                    throw new ArgumentNullException(nameof(ttoom));
-                if (ttooism is null)
-                    throw new ArgumentNullException(nameof(ttooism));
                 if (source.HasAttribute("ref"))
                 {
                     if (id_source.ContainsKey(source.GetAttribute("ref")))
@@ -157,12 +149,10 @@ namespace MainDen
                     {
                         string source_t = source.GetAttribute("type");
                         object source_object = null;
-                        if (ttooism.ContainsKey(source_t))
-                            source_object = ttooism[source_t](source, ref id_source, ref ttoo, ref ttoom, ref ttooism);
-                        else if (ttoom.ContainsKey(source_t))
-                            source_object = ttoom[source_t](source, ref ttoo, ref ttoom, ref ttooism);
-                        else if (ttoo.ContainsKey(source_t))
-                            source_object = ttoo[source_t](source);
+                        if (XmlElementIdConverters.ContainsKey(source_t))
+                            source_object = XmlElementIdConverters[source_t](source, ref id_source);
+                        else if (XmlElementConverters.ContainsKey(source_t))
+                            source_object = XmlElementConverters[source_t](source);
                         #region Simple types
                         else if (source_t == typeof(Boolean).FullName)
                             source_object = Convert.ToBoolean(source.InnerText);
@@ -214,7 +204,7 @@ namespace MainDen
                             id_source.Add(source.GetAttribute("id"), source_o);
                         int i = 0;
                         foreach (XmlElement xmlElement in source)
-                            source_o[i++] = ToObject(xmlElement, ref id_source, ref ttoo, ref ttoom, ref ttooism);
+                            source_o[i++] = ToObject(xmlElement, ref id_source);
                         return source_o;
                     }
                     else
@@ -405,39 +395,27 @@ namespace MainDen
                 }
                 return xmlThis;
             }
-            public static Obj ToObject(XmlElement source, ref IDictionary<string, CyclicalMethods.TtoO<XmlElement>> ttoo, ref IDictionary<string, CyclicalMethods.TtoOM<XmlElement>> ttoom, ref IDictionary<string, CyclicalMethods.TtoOISM<XmlElement>> ttooism)
+            public static Obj ToObject(XmlElement source)
             {
                 if (source is null)
                     throw new ArgumentNullException(nameof(source));
-                if (ttoo is null)
-                    throw new ArgumentNullException(nameof(ttoo));
-                if (ttoom is null)
-                    throw new ArgumentNullException(nameof(ttoom));
-                if (ttooism is null)
-                    throw new ArgumentNullException(nameof(ttooism));
                 IDictionary<string, object> id_source = new Dictionary<string, object>();
-                if (!ttoom.ContainsKey(typeof(Obj).FullName))
-                    ttoom.Add(typeof(Obj).FullName, ToObject);
-                if (!ttooism.ContainsKey(typeof(Obj).FullName))
-                    ttooism.Add(typeof(Obj).FullName, ToObject);
-                return ToObject(source, ref id_source, ref ttoo, ref ttoom, ref ttooism);
+                if (!CyclicalMethods.XmlElementConverters.ContainsKey(typeof(Obj).FullName))
+                    CyclicalMethods.XmlElementConverters.Add(typeof(Obj).FullName, ToObject);
+                if (!CyclicalMethods.XmlElementIdConverters.ContainsKey(typeof(Obj).FullName))
+                    CyclicalMethods.XmlElementIdConverters.Add(typeof(Obj).FullName, ToObject);
+                return ToObject(source, ref id_source);
             }
-            public static Obj ToObject(XmlElement source, ref IDictionary<string, object> id_source, ref IDictionary<string, CyclicalMethods.TtoO<XmlElement>> ttoo, ref IDictionary<string, CyclicalMethods.TtoOM<XmlElement>> ttoom, ref IDictionary<string, CyclicalMethods.TtoOISM<XmlElement>> ttooism)
+            public static Obj ToObject(XmlElement source, ref IDictionary<string, object> id_source)
             {
                 if (source is null)
                     throw new ArgumentNullException(nameof(source));
                 if (id_source is null)
                     throw new ArgumentNullException(nameof(id_source));
-                if (ttoo is null)
-                    throw new ArgumentNullException(nameof(ttoo));
-                if (ttoom is null)
-                    throw new ArgumentNullException(nameof(ttoom));
-                if (ttooism is null)
-                    throw new ArgumentNullException(nameof(ttooism));
-                if (!ttoom.ContainsKey(typeof(Obj).FullName))
-                    ttoom.Add(typeof(Obj).FullName, ToObject);
-                if (!ttooism.ContainsKey(typeof(Obj).FullName))
-                    ttooism.Add(typeof(Obj).FullName, ToObject);
+                if (!CyclicalMethods.XmlElementConverters.ContainsKey(typeof(Obj).FullName))
+                    CyclicalMethods.XmlElementConverters.Add(typeof(Obj).FullName, ToObject);
+                if (!CyclicalMethods.XmlElementIdConverters.ContainsKey(typeof(Obj).FullName))
+                    CyclicalMethods.XmlElementIdConverters.Add(typeof(Obj).FullName, ToObject);
                 if (source.HasAttribute("id"))
                     if (id_source.ContainsKey(source.GetAttribute("id")))
                         throw new XmlException($"Object with id=\"{source.GetAttribute("id")}\" has already been created.");
@@ -453,7 +431,7 @@ namespace MainDen
                         if (obj.ContainsProperty(xmlProperty.GetAttribute("key")))
                             throw new XmlException($"Property with key=\"{xmlProperty.GetAttribute("key")}\" has already been created.");
                         else
-                            obj.SetProperty(xmlProperty.GetAttribute("key"), CyclicalMethods.ToObject(xmlProperty, ref id_source, ref ttoo, ref ttoom, ref ttooism));
+                            obj.SetProperty(xmlProperty.GetAttribute("key"), CyclicalMethods.ToObject(xmlProperty, ref id_source));
                     else
                         throw new XmlException("XML node \"Property\" must contain the attribute \"key\".");
                 return obj;
@@ -630,39 +608,27 @@ namespace MainDen
                 }
                 return xmlThis;
             }
-            public static Group ToObject(XmlElement source, ref IDictionary<string, CyclicalMethods.TtoO<XmlElement>> ttoo, ref IDictionary<string, CyclicalMethods.TtoOM<XmlElement>> ttoom, ref IDictionary<string, CyclicalMethods.TtoOISM<XmlElement>> ttooism)
+            public static Group ToObject(XmlElement source)
             {
                 if (source is null)
                     throw new ArgumentNullException(nameof(source));
-                if (ttoo is null)
-                    throw new ArgumentNullException(nameof(ttoo));
-                if (ttoom is null)
-                    throw new ArgumentNullException(nameof(ttoom));
-                if (ttooism is null)
-                    throw new ArgumentNullException(nameof(ttooism));
+                if (!CyclicalMethods.XmlElementConverters.ContainsKey(typeof(Group).FullName))
+                    CyclicalMethods.XmlElementConverters.Add(typeof(Group).FullName, ToObject);
+                if (!CyclicalMethods.XmlElementIdConverters.ContainsKey(typeof(Group).FullName))
+                    CyclicalMethods.XmlElementIdConverters.Add(typeof(Group).FullName, ToObject);
                 IDictionary<string, object> id_source = new Dictionary<string, object>();
-                if (!ttoom.ContainsKey(typeof(Group).FullName))
-                    ttoom.Add(typeof(Group).FullName, ToObject);
-                if (!ttooism.ContainsKey(typeof(Group).FullName))
-                    ttooism.Add(typeof(Group).FullName, ToObject);
-                return ToObject(source, ref id_source, ref ttoo, ref ttoom, ref ttooism);
+                return ToObject(source, ref id_source);
             }
-            public static Group ToObject(XmlElement source, ref IDictionary<string, object> id_source, ref IDictionary<string, CyclicalMethods.TtoO<XmlElement>> ttoo, ref IDictionary<string, CyclicalMethods.TtoOM<XmlElement>> ttoom, ref IDictionary<string, CyclicalMethods.TtoOISM<XmlElement>> ttooism)
+            public static Group ToObject(XmlElement source, ref IDictionary<string, object> id_source)
             {
                 if (source is null)
                     throw new ArgumentNullException(nameof(source));
                 if (id_source is null)
                     throw new ArgumentNullException(nameof(id_source));
-                if (ttoo is null)
-                    throw new ArgumentNullException(nameof(ttoo));
-                if (ttoom is null)
-                    throw new ArgumentNullException(nameof(ttoom));
-                if (ttooism is null)
-                    throw new ArgumentNullException(nameof(ttooism));
-                if (!ttoom.ContainsKey(typeof(Group).FullName))
-                    ttoom.Add(typeof(Group).FullName, ToObject);
-                if (!ttooism.ContainsKey(typeof(Group).FullName))
-                    ttooism.Add(typeof(Group).FullName, ToObject);
+                if (!CyclicalMethods.XmlElementConverters.ContainsKey(typeof(Group).FullName))
+                    CyclicalMethods.XmlElementConverters.Add(typeof(Group).FullName, ToObject);
+                if (!CyclicalMethods.XmlElementIdConverters.ContainsKey(typeof(Group).FullName))
+                    CyclicalMethods.XmlElementIdConverters.Add(typeof(Group).FullName, ToObject);
                 if (source.HasAttribute("id"))
                     if (id_source.ContainsKey(source.GetAttribute("id")))
                         throw new XmlException($"Object with id=\"{source.GetAttribute("id")}\" has already been created.");
@@ -674,7 +640,7 @@ namespace MainDen
                     throw new XmlException($"XML representation of object of type \"{typeof(Group).FullName}\" must contain one node \"Entries\".");
                 XmlElement xmlEntries = (XmlElement)xmlEntriesList[0];
                 foreach (XmlElement xmlEntry in xmlEntries.GetElementsByTagName("Entry"))
-                    group.Include(CyclicalMethods.ToObject(xmlEntry, ref id_source, ref ttoo, ref ttoom, ref ttooism));
+                    group.Include(CyclicalMethods.ToObject(xmlEntry, ref id_source));
                 return group;
             }
             public int GetHashCode(ref IDictionary<object, int> hashCodes)
