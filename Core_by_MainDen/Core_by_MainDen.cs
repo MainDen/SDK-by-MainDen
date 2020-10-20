@@ -151,44 +151,47 @@ namespace MainDen
                         object source_object = null;
                         if (XmlElementIdConverters.ContainsKey(source_t))
                             source_object = XmlElementIdConverters[source_t](source, ref id_source);
-                        else if (XmlElementConverters.ContainsKey(source_t))
-                            source_object = XmlElementConverters[source_t](source);
-                        #region Simple types
-                        else if (source_t == typeof(Boolean).FullName)
-                            source_object = Convert.ToBoolean(source.InnerText);
-                        else if (source_t == typeof(Byte).FullName)
-                            source_object = Convert.ToByte(source.InnerText);
-                        else if (source_t == typeof(Char).FullName)
-                            source_object = Convert.ToChar(source.InnerText);
-                        else if (source_t == typeof(DateTime).FullName)
-                            source_object = Convert.ToDateTime(source.InnerText);
-                        else if (source_t == typeof(Decimal).FullName)
-                            source_object = Convert.ToDecimal(source.InnerText);
-                        else if (source_t == typeof(Double).FullName)
-                            source_object = Convert.ToDouble(source.InnerText);
-                        else if (source_t == typeof(Int16).FullName)
-                            source_object = Convert.ToInt16(source.InnerText);
-                        else if (source_t == typeof(Int32).FullName)
-                            source_object = Convert.ToInt32(source.InnerText);
-                        else if (source_t == typeof(Int64).FullName)
-                            source_object = Convert.ToInt64(source.InnerText);
-                        else if (source_t == typeof(SByte).FullName)
-                            source_object = Convert.ToSByte(source.InnerText);
-                        else if (source_t == typeof(Single).FullName)
-                            source_object = Convert.ToSingle(source.InnerText);
-                        else if (source_t == typeof(String).FullName)
-                            source_object = Convert.ToString(source.InnerText);
-                        else if (source_t == typeof(UInt16).FullName)
-                            source_object = Convert.ToUInt16(source.InnerText);
-                        else if (source_t == typeof(UInt32).FullName)
-                            source_object = Convert.ToUInt32(source.InnerText);
-                        else if (source_t == typeof(UInt64).FullName)
-                            source_object = Convert.ToUInt64(source.InnerText);
-                        #endregion
+                        else
+                        {
+                            if (XmlElementConverters.ContainsKey(source_t))
+                                source_object = XmlElementConverters[source_t](source);
+                            #region Simple types
+                            else if (source_t == typeof(Boolean).FullName)
+                                source_object = Convert.ToBoolean(source.InnerText);
+                            else if (source_t == typeof(Byte).FullName)
+                                source_object = Convert.ToByte(source.InnerText);
+                            else if (source_t == typeof(Char).FullName)
+                                source_object = Convert.ToChar(source.InnerText);
+                            else if (source_t == typeof(DateTime).FullName)
+                                source_object = Convert.ToDateTime(source.InnerText);
+                            else if (source_t == typeof(Decimal).FullName)
+                                source_object = Convert.ToDecimal(source.InnerText);
+                            else if (source_t == typeof(Double).FullName)
+                                source_object = Convert.ToDouble(source.InnerText);
+                            else if (source_t == typeof(Int16).FullName)
+                                source_object = Convert.ToInt16(source.InnerText);
+                            else if (source_t == typeof(Int32).FullName)
+                                source_object = Convert.ToInt32(source.InnerText);
+                            else if (source_t == typeof(Int64).FullName)
+                                source_object = Convert.ToInt64(source.InnerText);
+                            else if (source_t == typeof(SByte).FullName)
+                                source_object = Convert.ToSByte(source.InnerText);
+                            else if (source_t == typeof(Single).FullName)
+                                source_object = Convert.ToSingle(source.InnerText);
+                            else if (source_t == typeof(String).FullName)
+                                source_object = Convert.ToString(source.InnerText);
+                            else if (source_t == typeof(UInt16).FullName)
+                                source_object = Convert.ToUInt16(source.InnerText);
+                            else if (source_t == typeof(UInt32).FullName)
+                                source_object = Convert.ToUInt32(source.InnerText);
+                            else if (source_t == typeof(UInt64).FullName)
+                                source_object = Convert.ToUInt64(source.InnerText);
+                            #endregion
+                            if (source.HasAttribute("id"))
+                                id_source.Add(source.GetAttribute("id"), source_object);
+                        }
                         if (source_object == null)
                             throw new MissingMethodException($"There is no suitable method for converting a XML node to an object of type \"{source_t}\".");
-                        if (source.HasAttribute("id"))
-                            id_source.Add(source.GetAttribute("id"), source_object);
                         return source_object;
                     }
                     else if (source.ChildNodes.Count == 1 && source.FirstChild is XmlText xmlText)
@@ -260,7 +263,7 @@ namespace MainDen
                 }
             }
             public List<IGroup> Groups
-            { 
+            {
                 get
                 {
                     List<IGroup> groups = new List<IGroup>();
@@ -422,12 +425,21 @@ namespace MainDen
                 Obj obj = new Obj();
                 if (source.HasAttribute("id"))
                     id_source.Add(source.GetAttribute("id"), obj);
-                XmlNodeList xmlPropertiesList = source.GetElementsByTagName("Properties");
-                if (xmlPropertiesList.Count != 1)
+                XmlNodeList xmlPropertiesList = source.ChildNodes;
+                int k = -1;
+                for (int i = 0; i < xmlPropertiesList.Count; i++)
+                    if (xmlPropertiesList[i].Name == "Properties")
+                        if (k == -1)
+                            k = i;
+                        else
+                            throw new XmlException($"XML representation of object of type \"{typeof(Obj).FullName}\" must contain one node \"Properties\".");
+                if (k == -1)
                     throw new XmlException($"XML representation of object of type \"{typeof(Obj).FullName}\" must contain one node \"Properties\".");
-                XmlElement xmlProperties = (XmlElement)xmlPropertiesList[0];
-                foreach (XmlElement xmlProperty in xmlProperties.GetElementsByTagName("Property"))
-                    if (xmlProperty.HasAttribute("key"))
+                XmlElement xmlProperties = (XmlElement)xmlPropertiesList[k];
+                foreach (XmlElement xmlProperty in xmlProperties.ChildNodes)
+                    if (xmlProperty.Name != "Property")
+                        throw new XmlException("The XML node \"Properties\" can only contain \"Property\" nodes.");
+                    else if (xmlProperty.HasAttribute("key"))
                         if (obj.ContainsProperty(xmlProperty.GetAttribute("key")))
                             throw new XmlException($"Property with key=\"{xmlProperty.GetAttribute("key")}\" has already been created.");
                         else
@@ -502,7 +514,7 @@ namespace MainDen
                 {
                     List<IGroup> groups = new List<IGroup>();
                     foreach (IGroup group in _groups)
-                            groups.Add(group);
+                        groups.Add(group);
                     return groups;
                 }
             }
@@ -635,12 +647,22 @@ namespace MainDen
                 Group group = new Group();
                 if (source.HasAttribute("id"))
                     id_source.Add(source.GetAttribute("id"), group);
-                XmlNodeList xmlEntriesList = source.GetElementsByTagName("Entries");
-                if (xmlEntriesList.Count != 1)
+                XmlNodeList xmlEntriesList = source.ChildNodes;
+                int k = -1;
+                for (int i = 0; i < xmlEntriesList.Count; i++)
+                    if (xmlEntriesList[i].Name == "Entries")
+                        if (k == -1)
+                            k = i;
+                        else
+                            throw new XmlException($"XML representation of object of type \"{typeof(Group).FullName}\" must contain one node \"Entries\".");
+                if (k == -1)
                     throw new XmlException($"XML representation of object of type \"{typeof(Group).FullName}\" must contain one node \"Entries\".");
-                XmlElement xmlEntries = (XmlElement)xmlEntriesList[0];
-                foreach (XmlElement xmlEntry in xmlEntries.GetElementsByTagName("Entry"))
-                    group.Include(CyclicalMethods.ToObject(xmlEntry, ref id_source));
+                XmlElement xmlEntries = (XmlElement)xmlEntriesList[k];
+                foreach (XmlElement xmlEntry in xmlEntries.ChildNodes)
+                    if (xmlEntry.Name != "Entry")
+                        throw new XmlException("The XML node \"Entries\" can only contain \"Entry\" nodes.");
+                    else
+                        group.Include(CyclicalMethods.ToObject(xmlEntry, ref id_source));
                 return group;
             }
             public int GetHashCode(ref IDictionary<object, int> hashCodes)
