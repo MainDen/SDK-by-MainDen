@@ -1168,15 +1168,15 @@ namespace MainDen
             }
             public class RoutedList<T> : List<T>, ICollection<T>, IEnumerable<T>, IList<T>, IReadOnlyCollection<T>, IReadOnlyList<T>, IList, IRouted
             {
-                Route _route;
-                RouteMode _routeMode;
-                bool _increase;
-                int? _current;
-                int? _begin;
-                int? _end;
-                int? _next;
-                List<T> _list;
-                int? CInd
+                private Route _route;
+                private RouteMode _routeMode;
+                private bool _increase;
+                private int? _current;
+                private int? _begin;
+                private int? _end;
+                private int? _next;
+                private List<T> _list;
+                private int? CInd
                 {
                     get
                     {
@@ -1197,7 +1197,7 @@ namespace MainDen
                             return 0;
                     }
                 }
-                int? BInd
+                private int? BInd
                 {
                     get
                     {
@@ -1228,7 +1228,7 @@ namespace MainDen
                         return null;
                     }
                 }
-                int? EInd
+                private int? EInd
                 {
                     get
                     {
@@ -1259,7 +1259,7 @@ namespace MainDen
                         return null;
                     }
                 }
-                int? NInd
+                private int? NInd
                 {
                     get
                     {
@@ -1307,15 +1307,15 @@ namespace MainDen
                         return _next;
                     }
                 }
-                List<T> Lst
+                private List<T> Lst
                 {
                     get
                     {
                         List<T> list = new List<T>();
-                        if (Count == 0 || _route == Route.Empty || _current == null)
+                        if (_route == Route.Empty || Count == 0 || _current == null)
                             return list;
                         int c = (int)_current;
-                        if (Count == 1 || _route == Route.Unit)
+                        if (_route == Route.Unit)
                         {
                             list.Add(this[c]);
                             return list;
@@ -1330,8 +1330,41 @@ namespace MainDen
                                 i = Count - 1;
                             if (i >= Count)
                                 i = 0;
+                            if (_routeMode.HasFlag(RouteMode.Loop))
+                                for (; i != c; i += step)
+                                    list.Add(this[i]);
+                            return list;
+                        }
+                        if (_route == Route.PingPong)
+                        {
+                            int i = c;
+                            int last = Count - 1;
+                            int step = _increase ? 1 : -1;
+                            for (; i >= 0 && i <= last; i += step)
+                                list.Add(this[i]);
+                            if (i < 0)
+                                i = 0;
+                            if (i > last)
+                                i = last;
+                            if (i == _end && _increase == _routeMode.HasFlag(RouteMode.Reverse) && !_routeMode.HasFlag(RouteMode.Loop))
+                                return list;
+                            step = -step;
+                            i += step;
+                            if (i < 0)
+                                i = 0;
+                            if (i > last)
+                                i = last;
+                            for (; i > 0 && i < last; i += step)
+                                list.Add(this[i]);
+                            if (i != c || !_routeMode.HasFlag(RouteMode.Loop))
+                                list.Add(this[i]);
+                            if (i == _end && !_routeMode.HasFlag(RouteMode.Loop) || i == c)
+                                return list;
+                            step = -step;
+                            i += step;
                             for (; i != c; i += step)
                                 list.Add(this[i]);
+                            return list;
                         }
                         return list;
                     }
@@ -1522,7 +1555,7 @@ namespace MainDen
                     }
                     set
                     {
-                        bool chReverse = _routeMode.HasFlag(RouteMode.Reverse) == value.HasFlag(RouteMode.Reverse);
+                        bool chReverse = _routeMode.HasFlag(RouteMode.Reverse) != value.HasFlag(RouteMode.Reverse);
                         if (chReverse)
                             _increase = !_increase;
                         _routeMode = value;
@@ -1532,7 +1565,7 @@ namespace MainDen
                         _list = null;
                     }
                 }
-                public void Step()
+                public void MoveNext()
                 {
                     if (_current is null)
                         return;
@@ -1993,7 +2026,7 @@ namespace MainDen
                 {
                     IWorker worker = (IWorker)_workers.Current;
                     if (worker.Status == Status.Completed)
-                        _workers.Step();
+                        _workers.MoveNext();
                     else
                         worker.Work();
                 }
@@ -2066,7 +2099,7 @@ namespace MainDen
                 if (worker.Status == Status.Completed)
                 {
                     if (_workers.Current == worker)
-                        _workers.Step();
+                        _workers.MoveNext();
                     if (Enabled && Status == Status.Running && _workers.Current != null)
                     {
                         IWorker next = (IWorker)_workers.Current;
@@ -2082,7 +2115,7 @@ namespace MainDen
                 if (worker.Status == Status.Completed)
                 {
                     if (_workers.Current == worker)
-                        _workers.Step();
+                        _workers.MoveNext();
                     if (Enabled && Status == Status.Running && _workers.Current != null)
                     {
                         IWorker next = (IWorker)_workers.Current;
