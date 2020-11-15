@@ -1184,13 +1184,6 @@ namespace MainDen
                             return null;
                         if (_route == Route.Empty)
                             return null;
-                        if (_current != null)
-                            if (_current < 0)
-                                return 0;
-                            else if (_current >= Count)
-                                return Count - 1;
-                            else
-                                return _current;
                         if (_routeMode.HasFlag(RouteMode.Reverse))
                             return Count - 1;
                         else
@@ -1572,6 +1565,13 @@ namespace MainDen
                     if (_route == Route.PingPong && _current != null && _next != null && _current < _next != _increase)
                         _increase = !_increase;
                     _current = _next;
+                    _next = NInd;
+                    _list = null;
+                }
+                public void Reset()
+                {
+                    _increase = !_routeMode.HasFlag(RouteMode.Reverse);
+                    _current = CInd;
                     _next = NInd;
                     _list = null;
                 }
