@@ -1945,8 +1945,8 @@ namespace MainDen
             void Disable();
             void Reset();
             void Error();
-            void Complete();
             void Work();
+            void Complete();
             void ChangeStatus(Status status);
             event Worker.IWorkerEventHandler OnError;
             event Worker.IWorkerEventHandler OnStatusChanged;
@@ -1988,26 +1988,27 @@ namespace MainDen
                     _enabled = value;
                 }
             }
-            public void Enable()
+            public virtual void Enable()
             {
                 _enabled = true;
                 _status = Status.Running;
             }
-            public void Disable()
+            public virtual void Disable()
             {
                 _enabled = false;
                 _status = Status.Stopped;
             }
-            public void Reset()
+            public virtual void Reset()
             {
                 _enabled = false;
                 _status = Status.Empty;
             }
-            public void Error()
+            public virtual void Error()
             {
                 _status = Status.Error;
                 OnError?.Invoke(this);
             }
+            public abstract void Work();
             protected void Complete()
             {
                 _enabled = false;
@@ -2020,7 +2021,6 @@ namespace MainDen
                 _status = Status.Completed;
                 OnStatusChanged?.Invoke(this);
             }
-            public abstract void Work();
             protected void ChangeStatus(Status status)
             {
                 _status = status;
