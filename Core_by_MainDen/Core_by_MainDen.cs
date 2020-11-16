@@ -1510,6 +1510,35 @@ namespace MainDen
                         return null;
                     }
                 }
+                public int Remainder
+                {
+                    get
+                    {
+                        if (_route == Route.Empty || Count == 0 || _current == null)
+                            return 0;
+                        if (_routeMode.HasFlag(RouteMode.Loop))
+                            return -1;
+                        if (_route == Route.Unit)
+                            return 1;
+                        int c = (int)_current;
+                        if (_route == Route.Linear)
+                            if (_routeMode.HasFlag(RouteMode.Reverse))
+                                return c + 1;
+                            else
+                                return Count - c;
+                        if (_route == Route.PingPong)
+                            if (_routeMode.HasFlag(RouteMode.Reverse))
+                                if (_increase)
+                                    return Count - c;
+                                else
+                                    return Count + c;
+                            else if (_increase)
+                                return 2 * Count - 1 - c;
+                            else
+                                return c + 1;
+                        return 0;
+                    }
+                }
                 public List<T> List
                 {
                     get
