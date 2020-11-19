@@ -1,12 +1,13 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <TargetFrameworks>netcoreapp3.1;net48</TargetFrameworks>
     <RootNamespace>MainDen</RootNamespace>
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
     <Company />
     <Authors>MainDen</Authors>
     <AssemblyName>Core_by_MainDen</AssemblyName>
+    <Copyright>Copyright © MainDen</Copyright>
   </PropertyGroup>
 
   <PropertyGroup>

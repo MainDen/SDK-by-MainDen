@@ -6,7 +6,7 @@
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProjectGuid>{B2BCE182-13FD-4360-9C44-B514C662798B}</ProjectGuid>
     <OutputType>Library</OutputType>
-    <AppDesignerFolder>classes</AppDesignerFolder>
+    <AppDesignerFolder>presets</AppDesignerFolder>
     <RootNamespace>Windows_API_by_MainDen</RootNamespace>
     <AssemblyName>Windows_API_by_MainDen</AssemblyName>
     <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
@@ -46,7 +46,7 @@
     <Compile Include="classes\Buff.cs" />
     <Compile Include="classes\Iterceptor.cs" />
     <Compile Include="classes\WinAPI.cs" />
-    <Compile Include="classes\AssemblyInfo.cs" />
+    <Compile Include="presets\AssemblyInfo.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

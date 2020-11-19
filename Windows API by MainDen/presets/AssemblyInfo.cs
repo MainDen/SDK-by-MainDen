@@ -10,7 +10,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("")]
 [assembly: AssemblyProduct("Windows API by MainDen")]
-[assembly: AssemblyCopyright("Copyright © MainDen 2020")]
+[assembly: AssemblyCopyright("Copyright © MainDen")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
