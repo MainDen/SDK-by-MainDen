@@ -331,7 +331,7 @@ namespace MainDen.Collections.Generic
                         else
                             return Count + c;
                     else if (_increase)
-                        return 2 * Count - 1 - c;
+                        return 2 * Count - (Count == 1 ? 0 : 1) - c;
                     else
                         return c + 1;
                 return 0;
@@ -794,36 +794,6 @@ namespace MainDen.Collections.Generic
         }
 
         /// <inheritdoc/>
-        public int GetHashCode(ref IList<LeftRightPair<object, int>> hashCodes)
-        {
-            if (hashCodes is null)
-                throw new ArgumentNullException(nameof(hashCodes));
-            foreach (LeftRightPair<object, int> pair in hashCodes)
-                if (pair.Left == this)
-                    return pair.Right;
-            LeftRightPair<object, int> sourceHash = new LeftRightPair<object, int>(this, 0);
-            hashCodes.Add(sourceHash);
-            unchecked
-            {
-                int hashCode = 1733;
-                foreach (T t in this)
-                {
-                    hashCode *= 2;
-                    hashCode += CyclicalMethods.GetHashCode(t, ref hashCodes);
-                }
-                sourceHash.Right = hashCode;
-                return hashCode;
-            }
-        }
-
-        /// <inheritdoc/>
-        public override int GetHashCode()
-        {
-            IList<LeftRightPair<object, int>> hashCodes = new List<LeftRightPair<object, int>>();
-            return GetHashCode(ref hashCodes);
-        }
-
-        /// <inheritdoc/>
         int IList.Add(object item)
         {
             if (item is T)
@@ -863,6 +833,36 @@ namespace MainDen.Collections.Generic
                 return;
             }
             throw new ArgumentException($"{nameof(item)} is of a type that cannot be assigned to IList.");
+        }
+
+        /// <inheritdoc/>
+        public int GetHashCode(ref IList<LeftRightPair<object, int>> hashCodes)
+        {
+            if (hashCodes is null)
+                throw new ArgumentNullException(nameof(hashCodes));
+            foreach (LeftRightPair<object, int> pair in hashCodes)
+                if (pair.Left == this)
+                    return pair.Right;
+            LeftRightPair<object, int> sourceHash = new LeftRightPair<object, int>(this, 0);
+            hashCodes.Add(sourceHash);
+            unchecked
+            {
+                int hashCode = 1733;
+                foreach (T t in this)
+                {
+                    hashCode *= 2;
+                    hashCode += CyclicalMethods.GetHashCode(t, ref hashCodes);
+                }
+                sourceHash.Right = hashCode;
+                return hashCode;
+            }
+        }
+
+        /// <inheritdoc/>
+        public override int GetHashCode()
+        {
+            IList<LeftRightPair<object, int>> hashCodes = new List<LeftRightPair<object, int>>();
+            return GetHashCode(ref hashCodes);
         }
 
         /// <summary>

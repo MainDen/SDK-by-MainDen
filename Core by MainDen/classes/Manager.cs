@@ -119,6 +119,10 @@ namespace MainDen.Automation
                             worker.Enable();
                             break;
                         case Status.Completed:
+                            if ((_workers.RouteMode & RouteMode.Loop) != 0 || _workers.RouteType == RouteType.PingPong && _workers.NextIndex != null &&
+                                (_workers.CurrentIndex <= _workers.NextIndex && (_workers.RouteMode & RouteMode.Reverse) == 0) ||
+                                (_workers.CurrentIndex >= _workers.NextIndex && (_workers.RouteMode & RouteMode.Reverse) != 0))
+                                worker.Reset();
                             _workers.MoveNext();
                             break;
                         case Status.Running:
@@ -343,7 +347,7 @@ namespace MainDen.Automation
                         List<IWorker> list = manager._workers;
                         foreach (XmlElement xmlEntry in xmlElement.ChildNodes)
                             if (xmlEntry.Name != "Worker")
-                                throw new XmlException("The \"Entries\" node can only contain \"Worker\" nodes.");
+                                throw new XmlException("The \"Workers\" node can only contain \"Worker\" nodes.");
                             else if (CyclicalMethods.ToObject(xmlEntry, ref id_source) is IWorker worker)
                                 list.Add(worker);
                             else
